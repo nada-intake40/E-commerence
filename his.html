@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+    <head>
+         <meta charset="utf-8">
+         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="./jquery.js"></script>
+        <link rel="stylesheet" href="style.css">
+        <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+        <title>E_Commerance WebSite</title>
+    </head>
+
+   <body style="background-image: url(images/shopping1.jpg);background-size: cover;">
+    <script src="./page.js"></script>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-info">
+            <a class="navbar-brand font-weight-bolder" href="#">Shop</a>
+          
+              <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                  <a class="nav-link text-white" href="show.html">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link text-white" href="about-us.html">About</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link text-white" href="newform.html" >Contact US</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white cart" href="cart.html">
+                        <i class="fa fa-cart-arrow-down" style="color:wheat"></i><span>0</span>
+                    </a>
+                </li>
+              </ul>
+          </nav>
+    </header>
+
+        <div class="container-fluid  mt-5 ">
+            <div class="row justify-content-md-center ">
+                     <table class="table table-bordered table-hover table-grey thead-dark"  style="background-color: white" id="table">
+	               <th>Order</th>
+                    <th>Date</th>
+	                <th>Status</th>
+	                <th>Total</th>
+	               <th>Items No.</th>   
+                 </table>
+              </div>
+          </div>
+</body>
+</html>
+
+<script>
+let products=JSON.parse(localStorage.getItem('productInCart')); 
+console.log(products);
+const DB_NAME = 'cart_products';
+const DB_V = 5;
+const products_NAME = 'product';
+let db;
+let date1 = new Date();
+let date= date1.toString().substring(0,25);
+if ('indexedDB' in window) {
+    openDB();
+}
+function openDB() {
+
+    const dbReq = indexedDB.open(DB_NAME, DB_V);
+    dbReq.onerror = (ev) => {
+        console.error('onerror', ev.target.errorCode);
+    };
+    dbReq.onupgradeneeded = (ev) => {
+        console.log('onupgradeneeded');
+        const db = ev.target.result;
+        console.log("event"+ev);
+        if (ev.oldVersion < 8) {
+            let proStore
+
+            if (!db.objectStoreNames.contains(products_NAME)) {
+                proStore = db.createObjectStore(products_NAME, { keyPath: 'id', autoIncrement: true });
+            }
+
+            proStore = dbReq.transaction.objectStore(products_NAME);
+            
+            dateIndex = proStore.createIndex("Date", "",{ unique: false });
+            statusIndex = proStore.createIndex("Status","", { unique: false });
+
+            total = proStore.createIndex("Total","", { unique: false });
+            itemsIndex = proStore.createIndex("itemsNo.","", { unique: false });
+        }
+    };
+    dbReq.onsuccess = (ev) => {
+        console.log('onsuccess');
+        db = ev.target.result;
+        const tx = db.transaction(products_NAME, 'readwrite');
+        const proStore = tx.objectStore(products_NAME);
+         console.log(proStore);
+         let totalCost=0;
+         let totalItems=0;
+         if(products){
+         for(let element in products) {
+        totalItems+=products[element].amount;
+		totalCost+=products[element].amount*products[element].productPrice;
+		console.log(totalItems);
+        }
+        proStore.put({
+            Date: date,
+            Status:'Processing...',
+            Total:totalCost,
+            itemsNo:totalItems
+
+        });
+    }
+
+    if(document.querySelector('.cart span')) {
+		document.querySelector('.cart span').textContent=0; 
+	}
+        let table = document.querySelector(".table");
+        const getReq = proStore.getAll();
+        getReq.onsuccess = (ev) => {
+        const results = ev.target.result;
+        console.log(results);
+        for (let oneresult in results){
+        table.innerHTML +=`
+        <td>${results[oneresult].id}</td>
+        <td>${results[oneresult].Date}</td>
+        <td>${results[oneresult].Status}</td>
+        <td>${results[oneresult].Total} EGP</td>
+        <td>${results[oneresult].itemsNo}</td>`
+        }
+      }
+    }
+        localStorage.removeItem("productInCart");
+        localStorage.setItem('cartNumbers', 0);
+      }
+
+
+</script>
